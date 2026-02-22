@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>calculator · with installation button</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            user-select: none;
+        }
+        body {
+            background: linear-gradient(145deg, #3b4256 0%, #2a2f3f 100%);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .card {
+            background: #1e222e;
+            border-radius: 36px;
+            padding: 24px 20px 28px 20px;
+            box-shadow: 0 25px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05) inset;
+            width: 360px;
+        }
+        /* installation button — big, prominent, placed above the display */
+        .install-wrapper {
+            display: flex;
+            justify-content: stretch;
+            margin-bottom: 16px;
+        }
+        #installBtn {
+            background: #2f80ed;
+            border: none;
+            border-radius: 60px;
+            padding: 12px 20px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            letter-spacing: 0.3px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #0f2b4f, 0 6px 15px rgba(0,0,0,0.5);
+            transition: all 0.08s ease-out;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        #installBtn:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #0f2b4f, 0 8px 15px rgba(0,0,0,0.4);
+        }
+        #installBtn i { font-size: 1.3rem; font-style: normal; filter: drop-shadow(0 2px 2px black); }
+        #installBtn span { flex: 1; text-align: center; }
+        /* hidden fallback / status */
+        #installStatus {
+            text-align: center;
+            font-size: 0.75rem;
+            margin-top: 6px;
+            color: #9aa5b8;
+            min-height: 20px;
+        }
+
+        /* display */
+        .display {
+            background: #272c3b;
+            border-radius: 24px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            text-align: right;
+            box-shadow: inset 0 4px 6px #0f111a, 0 3px 0 #0b0e14;
+        }
+        .expression {
+            color: #8592b0;
+            font-size: 1rem;
+            min-height: 1.6rem;
+            word-wrap: break-word;
+            font-family: 'Fira Mono', monospace;
+        }
+        .result {
+            color: #f2f5fa;
+            font-size: 2.8rem;
+            font-weight: 600;
+            line-height: 1.2;
+            font-family: 'Fira Mono', monospace;
+            margin-top: 4px;
+            text-shadow: 0 3px 3px black;
+        }
+
+        /* buttons grid */
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .btn {
+            background: #303649;
+            border: none;
+            border-radius: 20px;
+            padding: 18px 0;
+            font-size: 1.6rem;
+            font-weight: 500;
+            color: #dfe6f0;
+            box-shadow: 0 6px 0 #1b1f2b, 0 8px 12px rgba(0,0,0,0.4);
+            transition: 0.07s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #1b1f2b, 0 8px 12px rgba(0,0,0,0.5);
+        }
+        .operator {
+            background: #42536b;
+            color: #ffd97c;
+            font-size: 1.8rem;
+        }
+        .equals {
+            background: #f2b343;
+            color: #1e1e2a;
+            box-shadow: 0 6px 0 #9e701f;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        .clear {
+            background: #3f3f5e;
+            color: #ffb5b5;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+        .zero {
+            grid-column: span 2;
+        }
+        .fn-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <!-- installation button (prominent, above display) -->
+    <div class="install-wrapper">
+        <button id="installBtn" aria-label="install calculator">
+            <i>⬇️</i>
+            <span>Installation</span>
+            <i style="opacity:0.4;">⚡</i>
+        </button>
+    </div>
+    <div id="installStatus"></div>
+
+    <!-- calculator display -->
+    <div class="display">
+        <div class="expression" id="exprDisplay"></div>
+        <div class="result" id="resultDisplay">0</div>
+    </div>
+
+    <!-- calculator keypad -->
+    <div class="buttons">
+        <button class="btn clear fn-text" data-action="clear">C</button>
+        <button class="btn operator fn-text" data-action="toggle-sign">±</button>
+        <button class="btn operator fn-text" data-action="percent">%</button>
+        <button class="btn operator" data-action="operator">÷</button>
+
+        <button class="btn" data-action="number">7</button>
+        <button class="btn" data-action="number">8</button>
+        <button class="btn" data-action="number">9</button>
+        <button class="btn operator" data-action="operator">×</button>
+
+        <button class="btn" data-action="number">4</button>
+        <button class="btn" data-action="number">5</button>
+        <button class="btn" data-action="number">6</button>
+        <button class="btn operator" data-action="operator">−</button>
+
+        <button class="btn" data-action="number">1</button>
+        <button class="btn" data-action="number">2</button>
+        <button class="btn" data-action="number">3</button>
+        <button class="btn operator" data-action="operator">+</button>
+
+        <button class="btn zero" data-action="number">0</button>
+        <button class="btn" data-action="decimal">.</button>
+        <button class="btn equals" data-action="equals">=</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- calculator state ----------
+        let currentInput = '';        // raw input being typed (or result after equals)
+        let previousOperand = null;
+        let pendingOperator = null;
+        let shouldResetInput = false; // after operator or equals, next digit starts fresh
+        let lastActionWasEquals = false;
+
+        // display elements
+        const exprDisplay = document.getElementById('exprDisplay');
+        const resultDisplay = document.getElementById('resultDisplay');
+
+        // helper to refresh display
+        function updateDisplay(expressionText = '') {
+            // show current input or '0' if empty
+            if (currentInput === '' || currentInput === '-') {
+                resultDisplay.innerText = '0';
+            } else {
+                // avoid过长显示，保留小数点后8位？但保持原样一般更好，但防止溢出做trim
+                let num = Number(currentInput);
+                if (!isNaN(num) && currentInput.trim() !== '') {
+                    // 如果数字很大，用科学计数？简单展示原始字符串
+                    resultDisplay.innerText = currentInput;
+                } else {
+                    resultDisplay.innerText = currentInput || '0';
+                }
+            }
+
+            // build expression line
+            let expr = '';
+            if (previousOperand !== null) {
+                expr += previousOperand;
+                if (pendingOperator) {
+                    expr += ' ' + pendingOperator + ' ';
+                }
+            }
+            // if we are in the middle of typing, show currentInput only if it's not already shown after operator
+            if (!shouldResetInput && currentInput && currentInput !== '0' && previousOperand === null) {
+                expr = currentInput;
+            } else if (shouldResetInput && previousOperand !== null && pendingOperator) {
+                // do nothing extra, pending op already shown
+            } else if (previousOperand !== null && !pendingOperator && lastActionWasEquals) {
+                // after equals, only result is shown — expression shows previous + operator? better show full previous
+                if (previousOperand !== null) expr = previousOperand + ' =';
+            } else if (currentInput && previousOperand !== null && pendingOperator) {
+                // if there's a second operand being typed
+                expr = previousOperand + ' ' + pendingOperator + ' ' + currentInput;
+            } else if (previousOperand !== null && pendingOperator && !currentInput) {
+                expr = previousOperand + ' ' + pendingOperator;
+            } else if (previousOperand !== null && !pendingOperator && !lastActionWasEquals) {
+                expr = previousOperand;
+            } else if (currentInput) {
+                expr = currentInput;
+            }
+            exprDisplay.innerText = expr || '';
+        }
+
+        // ----- basic operations -----
+        function evaluate(a, b, operator) {
+            const num1 = parseFloat(a);
+            const num2 = parseFloat(b);
+            if (isNaN(num1) || isNaN(num2)) return NaN;
+            switch (operator) {
+                case '+': return num1 + num2;
+                case '−': return num1 - num2;
+                case '×': return num1 * num2;
+                case '÷': return num1 / num2;
+                default: return num2;
+            }
+        }
+
+        // perform pending operation if possible
+        function performPending() {
+            if (previousOperand !== null && pendingOperator && currentInput !== '' && currentInput !== '-') {
+                const result = evaluate(previousOperand, currentInput, pendingOperator);
+                if (!isNaN(result) && isFinite(result)) {
+                    // convert to string, avoid scientific notation for large numbers?
+                    currentInput = Number.isInteger(result) ? result.toString() : parseFloat(result.toFixed(10)).toString();
+                } else {
+                    currentInput = 'Error';
+                }
+                previousOperand = currentInput;   // store for chaining (result becomes left operand)
+                pendingOperator = null;
+                shouldResetInput = true;
+            }
+        }
+
+        // ---------- number input ----------
+        function handleNumber(num) {
+            if (lastActionWasEquals) {
+                // start fresh after equals
+                previousOperand = null;
+                pendingOperator = null;
+                lastActionWasEquals = false;
+                currentInput = '';
+            }
+            if (shouldResetInput) {
+                currentInput = '';      // clear to start new operand
+                shouldResetInput = false;
+            }
+            if (currentInput.length >= 16) return; // reasonable limit
+            if (currentInput === '0' && num === '0') return; // avoid multiple zeros
+            if (currentInput === '0' && num !== '0') currentInput = num; // replace leading zero
+            else currentInput += num;
+            updateDisplay();
+        }
+
+        function handleDecimal() {
+            if (lastActionWasEquals) {
+                previousOperand = null; pendingOperator = null; lastActionWasEquals = false;
+                currentInput = '0.';
+                shouldResetInput = false;
+                updateDisplay(); return;
+            }
+            if (shouldResetInput) {
+                currentInput = '0.';
+                shouldResetInput = false;
+                updateDisplay(); return;
+            }
+            if (!currentInput.includes('.')) {
+                if (currentInput === '' || currentInput === '-') currentInput += '0.';
+                else currentInput += '.';
+            }
+            updateDisplay();
+        }
+
+        function handleOperator(op) {
+            if (lastActionWasEquals && previousOperand !== null) {
+                // after equals, previousOperand holds last result; we start new operation with that as left
+                currentInput = previousOperand.toString();
+                shouldResetInput = true;   // but we will reset after setting left operand
+                lastActionWasEquals = false;
+            }
+            if (pendingOperator && !shouldResetInput && currentInput !== '') {
+                // chain operation: compute previous with current, then set new operator
+                performPending();  // updates previousOperand & sets shouldResetInput true
+                // after performPending, previousOperand = result, pendingOperator = null, currentInput = result, shouldResetInput = true
+            }
+            // now set new operator
+            const leftOperand = (previousOperand !== null && !shouldResetInput && currentInput !== '') 
+                ? currentInput : previousOperand;
+
+            if (leftOperand !== null || currentInput !== '') {
+                // if we have something on the left
+                if (previousOperand === null && currentInput !== '') {
+                    previousOperand = currentInput;
+                } else if (previousOperand === null) {
+                    // edge: nothing yet, ignore? but operator first? use 0?
+                    previousOperand = '0';
+                }
+                pendingOperator = op;
+                shouldResetInput = true;   // next digit new operand
+                currentInput = '';         // clear current for fresh number
+                lastActionWasEquals = false;
+            } else {
+                // no operand yet, maybe just '-'? ignore.
+            }
+            updateDisplay();
+        }
+
+        function handleEquals() {
+            if (lastActionWasEquals && pendingOperator && previousOperand !== null && currentInput !== '') {
+                // repeated equals re-perform last operation with same operator and last operand (current is result)
+                // typical behavior: use last operator with previousOperand (old left) and current (right?) – simpler: evaluate again
+                if (previousOperand !== null && pendingOperator && currentInput !== '') {
+                    const newResult = evaluate(previousOperand, currentInput, pendingOperator);
+                    if (!isNaN(newResult) && isFinite(newResult)) {
+                        currentInput = Number.isInteger(newResult) ? newResult.toString() : parseFloat(newResult.toFixed(10)).toString();
+                        previousOperand = newResult.toString();  // keep left as previous? but we need right? Actually standard: 5+2=7, press = again -> 5+2+2? not always. we'll do simple: re-evaluate same op with new left = previous result, right = old right? tricky.
+                        // simpler: we store oldRight? For simplicity: just do prev = current, pending stays. but to avoid weird, we'll just performPending again using left as previous result and same operator? but need right operand. we'll fallback to normal equals behaviour:
+                    }
+                }
+            }
+            if (previousOperand !== null && pendingOperator && currentInput !== '' && currentInput !== '-') {
+                performPending();  // result stored in currentInput, previousOperand set to result, pending cleared, shouldResetInput=true
+                lastActionWasEquals = true;
+                shouldResetInput = true;
+            } else if (previousOperand !== null && pendingOperator && currentInput === '') {
+                // operator pressed but no second number, use previous as right? ignore? do nothing.
+            } else {
+                // just show current if nothing pending
+                if (currentInput === '') currentInput = '0';
+            }
+            updateDisplay();
+        }
+
+        function handleClear() {
+            currentInput = '';
+            previousOperand = null;
+            pendingOperator = null;
+            shouldResetInput = false;
+            lastActionWasEquals = false;
+            updateDisplay();
+        }
+
+        function handleToggleSign() {
+            if (currentInput === '' || currentInput === '0') {
+                currentInput = '-';
+            } else if (currentInput.startsWith('-')) {
+                currentInput = currentInput.slice(1) || '0';
+            } else {
+                currentInput = '-' + currentInput;
+            }
+            if (currentInput === '-0') currentInput = '-';
+            updateDisplay();
+        }
+
+        function handlePercent() {
+            if (currentInput !== '' && currentInput !== '-') {
+                const val = parseFloat(currentInput);
+                if (!isNaN(val)) {
+                    currentInput = (val / 100).toString();
+                }
+            } else if (previousOperand !== null && pendingOperator) {
+                // if we have operator and no current, treat as percentage of previous
+                const base = parseFloat(previousOperand);
+                if (!isNaN(base)) {
+                    const percentVal = base / 100;
+                    currentInput = percentVal.toString();
+                    shouldResetInput = false; // so it uses as second operand
+                }
+            }
+            updateDisplay();
+        }
+
+        // ---------- event binding ----------
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const action = btn.dataset.action; // 'number', 'operator', 'clear', 'equals', 'toggle-sign', 'percent', 'decimal'
+                const value = btn.innerText.trim(); // actual text (for number, operator, etc)
+
+                if (action === 'number') {
+                    handleNumber(value);
+                } else if (action === 'decimal') {
+                    handleDecimal();
+                } else if (action === 'operator') {
+                    // map displayed symbols to internal representation
+                    let op = value;
+                    if (value === '÷') op = '÷';
+                    else if (value === '×') op = '×';
+                    else if (value === '−') op = '−';
+                    else if (value === '+') op = '+';
+                    handleOperator(op);
+                } else if (action === 'equals') {
+                    handleEquals();
+                } else if (action === 'clear') {
+                    handleClear();
+                } else if (action === 'toggle-sign') {
+                    handleToggleSign();
+                } else if (action === 'percent') {
+                    handlePercent();
+                }
+            });
+        });
+
+        // initial display
+        updateDisplay();
+
+        // ---------- installation button logic (fake but works) ----------
+        const installBtn = document.getElementById('installBtn');
+        const statusDiv = document.getElementById('installStatus');
+        let promptEvent = null;
+
+        // Listen for beforeinstallprompt (supported in chrome/edge etc)
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); // prevent automatic mini-infobar
+            promptEvent = e;
+            statusDiv.innerText = '✅ Ready to install';
+            installBtn.style.background = '#2ecc71';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!promptEvent) {
+                // fallback / not supported or already installed
+                statusDiv.innerText = '⚠️ Install via browser menu (or already installed)';
+                // subtle animation
+                installBtn.style.background = '#f39c12';
+                setTimeout(() => {
+                    installBtn.style.background = '#2f80ed';
+                }, 300);
+                return;
+            }
+            // show install prompt
+            promptEvent.prompt();
+            const { outcome } = await promptEvent.userChoice;
+            if (outcome === 'accepted') {
+                statusDiv.innerText = '🎉 Installing ... (simulated)';
+                installBtn.disabled = true;
+                installBtn.style.opacity = '0.6';
+            } else {
+                statusDiv.innerText = '❌ Installation canceled';
+            }
+            promptEvent = null; // can only be used once
+        });
+
+        // optional: for safari/other, show a hint
+        if (!('beforeinstallprompt' in window)) {
+            statusDiv.innerText = '💡 Use browser menu to install';
+        }
+    })();
+</script>
+</body>
+</html>
